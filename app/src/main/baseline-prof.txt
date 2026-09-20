@@ -1,0 +1,77 @@
+# Baseline profile for You-Tube.
+#
+# A baseline profile is a list of classes and methods that ART should verify and compile ahead of
+# time at install time instead of interpreting on first use. For a Compose app it is the single
+# highest-leverage start-up optimisation available: Compose's own runtime, the Material theme and
+# the first screen's composables are otherwise interpreted during exactly the frames the user is
+# watching.
+#
+# AGP packages this file (src/main/baseline-prof.txt) into the APK as `assets/dexopt/baseline.prof`,
+# and `androidx.profileinstaller` (a dependency of this module) installs it on the device.
+#
+# The rules below are hand-tuned around the app's real start-up path: Application →
+# MainActivity → theme → shell → first feed frame → the playback session. They use the standard
+# human-readable profile format: HSPL<class-descriptor> or HSPL<class>;-><method>(<args>)<ret>, where
+# H = hot, S = startup, P = post-startup and L = the class/method itself.
+#
+# Producing the *fully* optimal profile needs an on-device run:
+#     ./gradlew :app:generateBaselineProfile
+# with a device attached, which is why CI also accepts a `baseline-prof.txt` replacement. What is
+# listed here covers start-up and the feed scroll path, and is checked in so that even a build with
+# no connected device ships a profile.
+
+# ── Process start ────────────────────────────────────────────────────────────
+HSPLcom/app/youtube/lite/LiteApp;->onCreate()V
+HSPLcom/app/youtube/lite/LiteApp;->newImageLoader()Lcoil/ImageLoader;
+HSPLcom/app/youtube/lite/LiteApp;->onTrimMemory(I)V
+HSPLcom/app/youtube/lite/core/di/AppGraph;->install(Landroid/app/Application;)Lcom/app/youtube/lite/core/di/AppGraph;
+HSPLcom/app/youtube/lite/core/di/AppGraph;->warmUp()V
+HSPLcom/app/youtube/lite/core/di/AppGraph;
+
+# ── Activity + theme ─────────────────────────────────────────────────────────
+HSPLcom/app/youtube/lite/ui/MainActivity;->onCreate(Landroid/os/Bundle;)V
+HSPLcom/app/youtube/lite/ui/MainActivity;
+HSPLcom/app/youtube/lite/ui/LiteAppShellKt;
+HSPLcom/app/youtube/lite/ui/theme/ThemeKt;
+HSPLcom/app/youtube/lite/ui/theme/ThemeKt$LiteTheme$1;
+
+# ── First screen: the feed ───────────────────────────────────────────────────
+HSPLcom/app/youtube/lite/ui/screens/FeedScreenKt;
+HSPLcom/app/youtube/lite/ui/components/FeedListKt;
+HSPLcom/app/youtube/lite/ui/components/VideoCardKt;
+HSPLcom/app/youtube/lite/ui/components/ShimmerKt;
+HSPLcom/app/youtube/lite/ui/components/StateViews;
+HSPLcom/app/youtube/lite/ui/navigation/NavigationKt;
+
+# ── Data: networking, parsing, settings ──────────────────────────────────────
+HSPLcom/app/youtube/lite/core/net/Http;
+HSPLcom/app/youtube/lite/core/net/LiteCookieJar;
+HSPLcom/app/youtube/lite/core/net/DefaultHeadersInterceptor;
+HSPLcom/app/youtube/lite/data/innertube/InnerTubeClient;
+HSPLcom/app/youtube/lite/data/innertube/RendererParser;
+HSPLcom/app/youtube/lite/data/repo/FeedRepository;
+HSPLcom/app/youtube/lite/data/prefs/SettingsRepository;
+HSPLcom/app/youtube/lite/data/model/VideoItem;
+HSPLcom/app/youtube/lite/core/util/Formatters;
+
+# ── Playback ─────────────────────────────────────────────────────────────────
+HSPLcom/app/youtube/lite/player/PlayerManager;
+HSPLcom/app/youtube/lite/player/PlaybackService;
+HSPLcom/app/youtube/lite/player/LowRamLoadControl;
+HSPLcom/app/youtube/lite/player/PlayerFactory;
+HSPLcom/app/youtube/lite/ui/screens/VideoScreenKt;
+HSPLcom/app/youtube/lite/ui/components/MiniPlayerKt;
+
+# ── Third-party code on the critical path ────────────────────────────────────
+HSPLokhttp3/OkHttpClient;
+HSPLokhttp3/internal/connection/RealConnectionPool;
+HSPLokhttp3/internal/http2/Http2Stream;
+HSPLkotlinx/serialization/json/Json;
+HSPLkotlinx/coroutines/flow/StateFlowKt;
+HSPLandroidx/compose/runtime/ComposerImpl;
+HSPLandroidx/compose/runtime/SlotTable;
+HSPLandroidx/compose/ui/platform/AndroidComposeView;
+HSPLandroidx/media3/exoplayer/ExoPlayerImpl;
+HSPLandroidx/media3/session/MediaController;
+HSPLcoil/ImageLoader;
+HSPLcoil/compose/AsyncImageKt;

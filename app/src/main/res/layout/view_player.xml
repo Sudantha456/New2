@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The video surface, declared once in XML so that the surface implementation is a compile-time
+  constant rather than a runtime decision:
+
+    app:surface_type="surface_view"  → frames are composited by SurfaceFlinger in a dedicated
+                                       hardware layer. The alternative (TextureView) routes every
+                                       frame through the UI's GPU context — an extra full-frame
+                                       copy and a full view-tree recomposite per frame, which is
+                                       precisely the stutter this app exists to avoid.
+    app:use_controller="false"       → transport controls are Compose (see VideoPlayerView
+                                       callers); the built-in controller would be a second,
+                                       invisible view hierarchy with its own handler and drawables.
+    app:show_buffering="never"       → our own overlay renders network state; two spinners is one
+                                       too many.
+    app:keep_content_on_player_reset="true" → a rendition swap (error recovery) must not flash a
+                                       black shutter: the last decoded frame stays on screen for
+                                       the few hundred milliseconds the swap takes.
+-->
+<androidx.media3.ui.PlayerView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/lite_player_view"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black"
+    app:keep_content_on_player_reset="true"
+    app:resize_mode="fit"
+    app:shutter_background_color="@android:color/black"
+    app:show_buffering="never"
+    app:surface_type="surface_view"
+    app:use_controller="false" />

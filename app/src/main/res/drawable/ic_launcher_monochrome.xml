@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Themed-icon (Android 13+) layer.
+
+  The system does not use the colours here: it keeps the *alpha* channel and tints what is left
+  with the wallpaper palette. That is why the mark is a single white silhouette — the plate with
+  the play triangle punched out of it using `fillType="evenOdd"` — instead of the two coloured
+  paths of the foreground. Anything painted inside the triangle would simply disappear once the
+  layer is tinted.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M35,33 L73,33 A11,11 0 0 1 84,44 L84,64 A11,11 0 0 1 73,75 L35,75 A11,11 0 0 1 24,64 L24,44 A11,11 0 0 1 35,33 Z M47.5,44.5 L66,54 L47.5,63.5 Z" />
+</vector>

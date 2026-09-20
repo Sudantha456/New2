@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Deliberately tiny: Compose draws all of the UI, so the XML theme only has to cover the window
+  itself — the moment before the first frame is drawn and the system-bar styling.
+
+  • No ActionBar: the app's own navigation is Compose.
+  • `windowBackground` matches the Compose surface, which removes the white flash that otherwise
+    appears between tapping the launcher icon and the first composition.
+  • Edge-to-edge is enabled with sane transparent bars; `enableEdgeToEdge()` in MainActivity does
+    the runtime part (bar contrast, light/dark icon flipping).
+  • The splash-screen attributes give Android 12+ a branded launch without the extra dependency:
+    the icon over the surface colour, no animation, and a short duration.
+-->
+<resources>
+
+    <style name="Theme.YouTube" parent="@android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/surface</item>
+        <item name="android:colorBackground">@color/surface</item>
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:navigationBarColor">@android:color/transparent</item>
+        <item name="android:windowDrawsSystemBarBackgrounds">true</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowLightNavigationBar">false</item>
+        <item name="android:windowNoTitle">true</item>
+        <item name="android:windowActivityTransitions">true</item>
+        <item name="android:windowContentTransitions">true</item>
+        <item name="android:windowAllowEnterTransitionOverlap">true</item>
+        <item name="android:windowAllowReturnTransitionOverlap">true</item>
+
+        <!-- Android 12+ splash screen: the launcher mark on the app surface. -->
+        <item name="android:windowSplashScreenBackground">@color/surface</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/ic_launcher_foreground</item>
+        <item name="android:windowSplashScreenAnimationDuration">200</item>
+    </style>
+
+</resources>

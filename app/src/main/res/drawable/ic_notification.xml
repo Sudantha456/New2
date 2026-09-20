@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Notification small icon.
+
+  Status-bar icons are not drawn in colour: the system keeps the alpha channel and tints the rest,
+  which is exactly why a flat coloured icon shows up as a grey blob. The mark is therefore the
+  same silhouette as the themed launcher icon — the plate with the triangle punched out — scaled
+  to a 24-unit viewport so the stroke widths stay whole numbers at the size the system draws.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:fillType="evenOdd"
+        android:pathData="M8,7 L16,7 A3,3 0 0 1 19,10 L19,14 A3,3 0 0 1 16,17 L8,17 A3,3 0 0 1 5,14 L5,10 A3,3 0 0 1 8,7 Z M11,10.2 L15,12 L11,13.8 Z" />
+</vector>

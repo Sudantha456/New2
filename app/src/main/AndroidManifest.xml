@@ -1,0 +1,85 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Permissions, kept to the absolute minimum this app can function with.
+
+  There is no analytics SDK, no ad SDK, no crash reporter and no backend, so nothing here exists
+  to feed a third party. Each entry is load-bearing:
+
+    INTERNET                    — talk to youtube.com (InnerTube) and googlevideo.com (media).
+    ACCESS_NETWORK_STATE        — pick a sane HLS/DASH policy and stop the "no connection" retry
+                                  loop; fed into NetworkMonitor.
+    FOREGROUND_SERVICE          — playback continues while the app is backgrounded.
+    FOREGROUND_SERVICE_MEDIA_PLAYBACK — the mandatory API 34+ typed variant of the above.
+    POST_NOTIFICATIONS          — without it (API 33+) the media notification is invisible and
+                                  the user cannot pause from the lock screen.
+    WAKE_LOCK                   — required by ExoPlayer's WAKE_MODE_NETWORK so audio survives the
+                                  screen turning off without us holding a lock of our own.
+-->
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.WAKE_LOCK" />
+
+    <!-- The app is usable on tablets, TVs and devices without a touchscreen. -->
+    <uses-feature
+        android:name="android.hardware.touchscreen"
+        android:required="false" />
+
+    <application
+        android:name=".LiteApp"
+        android:allowBackup="false"
+        android:allowClearUserData="true"
+        android:enableOnBackInvokedCallback="true"
+        android:hardwareAccelerated="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:largeHeap="false"
+        android:networkSecurityConfig="@xml/network_security_config"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.YouTube"
+        android:usesCleartextTraffic="false"
+        tools:targetApi="35">
+
+        <activity
+            android:name=".MainActivity"
+            android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|uiMode"
+            android:exported="true"
+            android:launchMode="singleTask"
+            android:theme="@style/Theme.YouTube"
+            android:windowSoftInputMode="adjustResize">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <!--
+          exported="false": the session is reached through MediaController's bind, which is
+          app-internal. System components (Bluetooth, lock screen, Android Auto) go through the
+          MediaSession, not through this service, so nothing is lost by closing it.
+        -->
+        <service
+            android:name=".player.PlaybackService"
+            android:exported="false"
+            android:foregroundServiceType="mediaPlayback">
+            <intent-filter>
+                <action android:name="androidx.media3.session.MediaSessionService" />
+            </intent-filter>
+        </service>
+
+        <!-- Headset/Bluetooth media buttons: the platform delivers ACTION_MEDIA_BUTTON here. -->
+        <receiver
+            android:name="androidx.media3.session.MediaButtonReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MEDIA_BUTTON" />
+            </intent-filter>
+        </receiver>
+    </application>
+</manifest>

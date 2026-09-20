@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Adaptive-icon foreground: the YouTube play emblem — a red rounded plate with a white play
+  triangle, drawn as vectors (no bitmaps, so the icon is crisp at every density and the whole
+  thing costs a couple of hundred bytes of APK).
+
+  Geometry, in the 108×108 layer:
+    • the plate is 60×42 with an 11-unit corner radius, centred at (54,54). Its corners reach
+      ~36.6 units from the centre before the radius pulls them in to ~33, which keeps the whole
+      glyph inside the 66-unit safe circle that circular launcher masks apply;
+    • the triangle's centroid is shifted ~3 units right of the plate's centre: a right-pointing
+      triangle whose bounding box is centred *looks* left-heavy, this is the standard optical
+      correction.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- The plate. -->
+    <path android:pathData="M35,33 L73,33 A11,11 0 0 1 84,44 L84,64 A11,11 0 0 1 73,75 L35,75 A11,11 0 0 1 24,64 L24,44 A11,11 0 0 1 35,33 Z">
+        <aapt:attr xmlns:aapt="http://schemas.android.com/aapt" name="android:fillColor">
+            <gradient
+                android:type="linear"
+                android:startX="24"
+                android:startY="33"
+                android:endX="84"
+                android:endY="75">
+                <item android:offset="0" android:color="#FFFF2B2B" />
+                <item android:offset="0.5" android:color="#FFFF0000" />
+                <item android:offset="1" android:color="#FFE00000" />
+            </gradient>
+        </aapt:attr>
+    </path>
+
+    <!-- The play triangle. -->
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M47.5,44.5 L47.5,63.5 L66,54 Z" />
+</vector>

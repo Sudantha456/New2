@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Notification small icon. The status bar only ever renders the *alpha* channel of this drawable
+  (it is tinted by the system), so the artwork must be a solid silhouette on transparent — a
+  coloured icon would appear as a grey blob. Kept deliberately simple: a small icon is drawn at
+  roughly 24 dp and any detail inside it turns into noise.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="24dp"
+    android:height="24dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24"
+    android:tint="#FFFFFFFF">
+
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M9.5,6 L19,12 L9.5,18 Z"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeWidth="3"
+        android:strokeLineJoin="round"
+        android:strokeLineCap="round" />
+</vector>

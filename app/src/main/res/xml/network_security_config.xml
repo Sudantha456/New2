@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Network policy for an app that holds a live Google session on the device.
+
+  • Cleartext is refused outright. Session cookies, the SAPISIDHASH `Authorization` header and
+    signed media URLs must never be allowed to travel over plain HTTP — not even in a fallback
+    path that a hostile network could try to trigger.
+  • Certificate transparency is on for the YouTube domains: this is what makes a mis-issued
+    certificate for youtube.com detectable, and the cost is one extra check per connection
+    establishment (the connection pool means that is once per session, not per request).
+  • No `<debug-overrides>`: a debuggable build gets the same guarantees, so a bug that only shows
+    up with a user-installed CA on a workstation cannot hide until release.
+-->
+<network-security-config>
+
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+
+    <domain-config cleartextTrafficPermitted="false">
+        <domain includeSubdomains="true">youtube.com</domain>
+        <domain includeSubdomains="true">googlevideo.com</domain>
+        <domain includeSubdomains="true">ytimg.com</domain>
+        <domain includeSubdomains="true">ggpht.com</domain>
+        <domain includeSubdomains="true">googleusercontent.com</domain>
+        <domain includeSubdomains="true">google.com</domain>
+
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </domain-config>
+
+</network-security-config>

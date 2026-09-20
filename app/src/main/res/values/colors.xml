@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  The handful of colours the platform needs before Compose is running (window background, splash,
+  notification channel). The Compose palette lives in `ui/theme/Color.kt`.
+-->
+<resources>
+    <!-- The app surface, matching the Compose dark scheme's background so there is no flash
+         between the launcher tap and the first composition. -->
+    <color name="surface">#FF0F0F0F</color>
+    <color name="surface_elevated">#FF1C1C1C</color>
+    <color name="on_surface">#FFEDEDED</color>
+
+    <!-- Brand red, used by the launcher glyph and the media notification. -->
+    <color name="brand_red">#FFFF0033</color>
+    <color name="brand_red_dark">#FFCC0029</color>
+
+    <!-- Launcher background: a near-white wash so the red emblem carries the icon. -->
+    <color name="icon_background">#FFFFFFFF</color>
+</resources>
