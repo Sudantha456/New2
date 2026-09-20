@@ -3,7 +3,7 @@ name: Build APK
 # Builds the app on every push and pull request, runs the unit tests, and publishes both APKs as
 # downloadable artifacts. The release APK is *installable even without a keystore*: the Gradle
 # build falls back to the debug signing config (see app/build.gradle.kts), which is what makes a
-# CI-produced release APK useful for testing R8/shrinking on a real device.
+# CI-produced release APK useful for testing R8 full-mode shrinking on a real device.
 
 on:
   push:
@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
     inputs:
       newpipe_extractor_version:
-        description: 'NewPipeExtractor version (tag or 40-char commit hash)'
+        description: 'NewPipeExtractor version (tag or 40-character commit hash)'
         required: false
         default: 'v0.26.5'
 
@@ -28,10 +28,9 @@ concurrency:
   cancel-in-progress: true
 
 env:
-  # Only the daemon flag lives here. Heap sizing and every other JVM argument belongs in
-  # gradle.properties: GRADLE_OPTS is split on whitespace with no shell-style quoting, so a
-  # quoted `-Dorg.gradle.jvmargs="-Xmx..."` would be passed through with the quote characters
-  # still in the value and Gradle would reject it.
+  # Only the daemon flag lives here. Every other JVM argument belongs in gradle.properties:
+  # GRADLE_OPTS is split on whitespace with no shell-style quoting, so a quoted
+  # `-Dorg.gradle.jvmargs="-Xmx..."` would reach Gradle with the quote characters intact.
   GRADLE_OPTS: -Dorg.gradle.daemon=false
   NEWPIPE_EXTRACTOR_VERSION: ${{ github.event.inputs.newpipe_extractor_version || 'v0.26.5' }}
 
@@ -43,40 +42,114 @@ jobs:
 
     steps:
       - name: Check out the repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
 
       # Java 17 is what AGP 8.9 requires; the app's own bytecode target (11) is unaffected.
       - name: Set up JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: '17'
 
-      # Verifies that gradle/wrapper/gradle-wrapper.jar is the genuine, unmodified wrapper before
-      # it is allowed to execute — the wrapper is the one binary in the repository that runs
-      # arbitrary code during the build.
+      # Verifies that gradle/wrapper/gradle-wrapper.jar is a genuine, unmodified Gradle wrapper
+      # before it is allowed to execute — the wrapper is the one binary in the repository that runs
+      # arbitrary code during the build. Our committed jar is the published 8.11.1 wrapper.
       - name: Validate the Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v4
+        uses: gradle/actions/wrapper-validation@v6
 
       # Handles the Gradle user-home cache (dependencies + build cache), which is where almost all
-      # of the build time goes on a cold runner. `cache-encryption-key` is intentionally absent:
-      # this project has no secrets to keep, and an unencrypted cache is faster to restore.
+      # of the build time goes on a cold runner.
       - name: Set up Gradle with caching
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
           add-job-summary: on-failure
 
+      # Every Gradle step tees its output to $RUNNER_TEMP. The "Report build failure" step below
+      # turns those files (and the JUnit XML) into annotations and a job summary, so a red build
+      # says *which* file and *which* line failed instead of just "exit code 1".
       - name: Unit tests
-        run: ./gradlew --stacktrace testDebugUnitTest
+        run: |
+          set -o pipefail
+          ./gradlew --stacktrace --console=plain testDebugUnitTest 2>&1 | tee "$RUNNER_TEMP/unit-tests.log"
 
       - name: Assemble debug APK
-        run: ./gradlew --stacktrace -PnewpipeExtractorVersion=${{ env.NEWPIPE_EXTRACTOR_VERSION }} assembleDebug
+        run: |
+          set -o pipefail
+          ./gradlew --stacktrace --console=plain \
+            -PnewpipeExtractorVersion="$NEWPIPE_EXTRACTOR_VERSION" assembleDebug \
+            2>&1 | tee "$RUNNER_TEMP/assemble-debug.log"
 
       # R8 full mode + resource shrinking run here. This is the configuration that actually ships,
       # so it is the one worth failing CI over.
       - name: Assemble release APK
-        run: ./gradlew --stacktrace -PnewpipeExtractorVersion=${{ env.NEWPIPE_EXTRACTOR_VERSION }} assembleRelease
+        run: |
+          set -o pipefail
+          ./gradlew --stacktrace --console=plain \
+            -PnewpipeExtractorVersion="$NEWPIPE_EXTRACTOR_VERSION" assembleRelease \
+            2>&1 | tee "$RUNNER_TEMP/assemble-release.log"
+
+      - name: Report build failure
+        if: failure()
+        run: |
+          python3 - "$RUNNER_TEMP" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import glob
+          import os
+          import re
+          import sys
+          import xml.etree.ElementTree as ET
+
+          tmp = sys.argv[1] if len(sys.argv) > 1 else "."
+          budget = 40
+
+          def annotate(title, message):
+              global budget
+              if budget <= 0:
+                  return
+              budget -= 1
+              flat = " | ".join(str(message).splitlines()[:8])[:1200]
+              print(f"::error title={title}::{flat}")
+
+          print("## Build diagnostics\n")
+
+          # ── failing unit tests ──────────────────────────────────────────────────────────────
+          suites = sorted(glob.glob("app/build/test-results/**/*.xml", recursive=True))
+          print(f"JUnit XML files: {len(suites)}\n")
+          for path in suites:
+              try:
+                  root = ET.parse(path).getroot()
+              except ET.ParseError as exc:
+                  print(f"unparseable {path}: {exc}")
+                  continue
+              for case in root.iter("testcase"):
+                  for kind in ("failure", "error"):
+                      node = case.find(kind)
+                      if node is None:
+                          continue
+                      name = f"{case.get('classname', '?')}.{case.get('name', '?')}"
+                      detail = ((node.get("message") or "") + "\n" + (node.text or "")).strip()
+                      print(f"### FAILED {name}\n```\n{detail[:3000]}\n```\n")
+                      annotate(f"test {name}", detail)
+
+          # ── compiler / resolver / task errors ───────────────────────────────────────────────
+          noisy = re.compile(
+              r"^(e: |error:|FAILURE:|Execution failed for task|> Task .* FAILED|"
+              r"Caused by:|What went wrong:|Could not resolve|Could not find|Could not determine|"
+              r"Unable to |Unresolved reference|Configuration cache)"
+          )
+          for log in sorted(glob.glob(os.path.join(tmp, "*.log"))):
+              if not os.path.getsize(log):
+                  continue
+              lines = open(log, errors="replace").read().splitlines()
+              hits = [line.rstrip() for line in lines if noisy.match(line)]
+              if not hits:
+                  continue
+              print(f"### {os.path.basename(log)} — {len(hits)} error lines\n```")
+              print("\n".join(hits[:120]))
+              print("```\n")
+              for line in hits[:budget]:
+                  annotate("gradle", line)
+          PY
 
       - name: Collect build report
         if: always()
@@ -94,7 +167,7 @@ jobs:
           } >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload debug APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: you-tube-debug-apk
           path: app/build/outputs/apk/debug/*.apk
@@ -102,7 +175,7 @@ jobs:
           retention-days: 30
 
       - name: Upload release APK
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: you-tube-release-apk
           path: app/build/outputs/apk/release/*.apk
@@ -110,10 +183,10 @@ jobs:
           retention-days: 30
 
       # The R8 mapping file is what turns a crash report's obfuscated frames back into source lines.
-      # It is worthless if it is not archived with the build that produced it.
+      # It is worthless if it is not archived together with the build that produced it.
       - name: Upload release mapping
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: you-tube-release-mapping
           path: |
@@ -124,8 +197,8 @@ jobs:
           retention-days: 30
 
       - name: Upload test report
-        if: failure()
-        uses: actions/upload-artifact@v4
+        if: always()
+        uses: actions/upload-artifact@v7
         with:
           name: you-tube-test-report
           path: app/build/reports/tests/
