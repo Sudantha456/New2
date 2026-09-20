@@ -64,9 +64,9 @@ class LowRamLoadControl(
      * video frame — and video gets whatever is left.
      */
     override fun calculateTargetBufferBytes(
-        trackSelectionArray: Array<ExoTrackSelection>?,
+        trackSelectionArray: Array<ExoTrackSelection>,
     ): Int {
-        val selections = trackSelectionArray ?: return targetLimit
+        val selections = trackSelectionArray
         var audioBytes = 0
         var videoBytes = 0
         for (selection in selections) {

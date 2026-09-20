@@ -47,7 +47,7 @@
         tools:targetApi="35">
 
         <activity
-            android:name=".MainActivity"
+            android:name=".ui.MainActivity"
             android:configChanges="orientation|screenSize|smallestScreenSize|screenLayout|keyboardHidden|density|uiMode"
             android:exported="true"
             android:launchMode="singleTask"

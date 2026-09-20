@@ -29,7 +29,9 @@ object L {
     @PublishedApi
     internal val ENABLED: Boolean = BuildConfig.DEBUG
 
-    private const val PREFIX = "YT-Lite/"
+    /** Shared tag prefix; `@PublishedApi` so the public inline functions above it can use it. */
+    @PublishedApi
+    internal const val PREFIX = "YT-Lite/"
 
     inline fun v(tag: String, message: () -> String) {
         if (ENABLED) Log.v(PREFIX + tag, message())

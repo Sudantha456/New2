@@ -152,8 +152,12 @@ jobs:
               say(f"### {os.path.basename(log)} — {len(lines)} lines")
               hits = [line for line in lines if noisy.search(line)]
               if hits:
-                  say("```\n" + "\n".join(hits[:150]) + "\n```\n")
-                  for line in hits[:20]:
+                  say("```\n" + "\n".join(hits[:200]) + "\n```\n")
+                  # Kotlin/Java compiler diagnostics first: they are the ones that name a file
+                  # and a line, and they are the ones a fix starts from.
+                  for line in [h for h in hits if h.startswith(("e: ", "w: ", "error:"))][:80]:
+                      annotate(os.path.basename(log), line)
+                  for line in [h for h in hits if not h.startswith(("e: ", "w: ", "error:"))][:20]:
                       annotate(os.path.basename(log), line)
               # Whatever matched or not, the last lines of a failing Gradle run are the ones that
               # say what actually went wrong, so they always get an annotation.

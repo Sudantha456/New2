@@ -86,12 +86,11 @@ fun MediaItem.withUpdatedBundle(bundle: PlaybackBundle): MediaItem {
     val extras = Bundle(2).apply {
         putString(EXTRA_PLAYBACK, AppJson.encodeToString(bundle))
     }
-    return buildUpon()
-        .setRequestMetadata(
-            MediaItem.RequestMetadata.Builder()
-                .setMediaUri(uri)
-                .setExtras(extras)
-                .build(),
-        )
-        .build()
+    // Only the ladder JSON changes: `buildUpon()` carries the item's own local configuration (and
+    // with it the URI) across, and the request metadata keeps its media URI when it had one.
+    val mediaUri = requestMetadata.mediaUri
+    val metadata = MediaItem.RequestMetadata.Builder().setExtras(extras).apply {
+        if (mediaUri != null) setMediaUri(mediaUri)
+    }
+    return buildUpon().setRequestMetadata(metadata.build()).build()
 }

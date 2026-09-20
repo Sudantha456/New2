@@ -19,7 +19,7 @@ import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionCommands
 import androidx.media3.session.SessionResult
-import com.app.youtube.lite.MainActivity
+import com.app.youtube.lite.ui.MainActivity
 import com.app.youtube.lite.R
 import com.app.youtube.lite.core.di.AppGraph
 import com.app.youtube.lite.core.util.L
@@ -186,7 +186,7 @@ class PlaybackService : MediaSessionService() {
             // The default command set plus ours: without this the controller's custom commands
             // are rejected by the session before they ever reach onCustomCommand.
             val available = SessionCommands.Builder()
-                .addSessionCommands(MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS)
+                .addAllSessionCommands(MediaSession.ConnectionResult.DEFAULT_SESSION_COMMANDS)
                 .addSessionCommands(PlaybackCommands.ALL)
                 .build()
             return MediaSession.ConnectionResult.AcceptedResultBuilder(session)
@@ -399,7 +399,7 @@ class PlaybackService : MediaSessionService() {
         refreshJob = graph.scope.launch {
             runCatching { graph.resolver.resolve(next.watchUrl) }
                 .onSuccess { fresh -> mainHandler.post { playBundle(fresh, 0L) } }
-                .onFailure { L.w(TAG) { "autoplay of ${next.videoId} failed: $it" } }
+                .onFailure { L.w(TAG) { "autoplay of ${next.id} failed: $it" } }
         }
     }
 
@@ -418,16 +418,14 @@ class PlaybackService : MediaSessionService() {
             runCatching { graph.resolver.resolve(next.watchUrl) }
                 .onSuccess { resolved ->
                     prefetched = resolved
-                    L.d(TAG) { "prefetched ${next.videoId} (${resolved.candidates.size} rungs)" }
+                    L.d(TAG) { "prefetched ${next.id} (${resolved.candidates.size} rungs)" }
                 }
-                .onFailure { L.d(TAG) { "prefetch of ${next.videoId} failed: $it" } }
+                .onFailure { L.d(TAG) { "prefetch of ${next.id} failed: $it" } }
         }
     }
 
     private fun nextRelated(bundle: PlaybackBundle) = bundle.related.firstOrNull { candidate ->
-        candidate.videoId.isNotEmpty() &&
-            candidate.videoId != bundle.videoId &&
-            candidate.videoId !in playedIds
+        candidate.id.isNotEmpty() && candidate.id != bundle.videoId && candidate.id !in playedIds
     }
 
     // ---------------------------------------------------------------- housekeeping

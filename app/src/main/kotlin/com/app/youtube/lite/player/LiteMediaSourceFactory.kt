@@ -139,11 +139,14 @@ class LiteMediaSourceFactory(
                     "Accept-Language" to "en-US,en;q=0.9",
                 ),
             )
-            // Media segments are immutable: never let a proxy return a stale range.
-            .setCacheControl(CacheControl.NO_STORE)
+            // Media segments are immutable: never let a proxy return a stale range. (OkHttp 4
+            // dropped the CacheControl.NO_STORE constant, so it is built explicitly.)
+            .setCacheControl(NO_STORE_CACHE_CONTROL)
     }
 
     private companion object {
+        val NO_STORE_CACHE_CONTROL: CacheControl = CacheControl.Builder().noStore().build()
+
         const val HLS_MIME = "application/x-mpegURL"
         const val MEDIA_ORIGIN = "https://www.youtube.com"
 
