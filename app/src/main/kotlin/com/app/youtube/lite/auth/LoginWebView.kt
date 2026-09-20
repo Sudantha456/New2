@@ -91,7 +91,16 @@ fun LoginWebView(
 
     val harvester = remember(webView) {
         CookieHarvester { cookies ->
-            currentOutcome(LoginOutcome.Success(cookies))
+            // null means the manual harvest ran and at least one of the six cookies was missing.
+            // A partial session is worse than none — YouTube would answer as a signed-out client
+            // and the failure would look like a parser bug — so it is reported as a failure.
+            currentOutcome(
+                if (cookies == null) {
+                    LoginOutcome.Failure("Sign-in did not complete")
+                } else {
+                    LoginOutcome.Success(cookies)
+                },
+            )
             // Reclaim the renderer now; the host unmounts this screen a frame later and the
             // DisposableEffect below is then a no-op.
             destroyWebView(webView)
@@ -102,10 +111,7 @@ fun LoginWebView(
         webView.webViewClient = object : WebViewClient() {
             override fun onPageStarted(view: WebView, url: String?, favicon: Bitmap?) {
                 isLoading = true
-                url?.let {
-                    hint = hintFor(it)
-                    harvester.observe(it)
-                }
+                hint = url?.let { hintFor(it) }
             }
 
             override fun onPageFinished(view: WebView, url: String?) {

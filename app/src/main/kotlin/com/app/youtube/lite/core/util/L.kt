@@ -19,8 +19,15 @@ import com.app.youtube.lite.BuildConfig
  */
 object L {
 
-    /** True in debug builds; R8 constant-folds this to `false` in release. */
-    const val ENABLED = BuildConfig.DEBUG
+    /**
+     * True in debug builds; R8 constant-folds this to `false` in release.
+     *
+     * `@PublishedApi internal` rather than `const`: `BuildConfig.DEBUG` is a Java field, which
+     * Kotlin does not accept as a `const` initialiser, and the inline functions below must be able
+     * to read it from their call sites.
+     */
+    @PublishedApi
+    internal val ENABLED: Boolean = BuildConfig.DEBUG
 
     private const val PREFIX = "YT-Lite/"
 

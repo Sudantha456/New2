@@ -91,7 +91,7 @@ class AuthManager(
      */
     fun logout() {
         store.clear()
-        cookieJar.setSessionCookies(emptyList())
+        cookieJar.clear()
         runCatching {
             val manager = CookieManager.getInstance()
             manager.removeAllCookies(null)
@@ -112,7 +112,10 @@ class AuthManager(
     fun cookieHeader(): String? = cookies?.cookieHeader()
 
     private fun install(cookies: SessionCookies) {
-        cookieJar.setSessionCookies(cookies.toOkHttpCookies())
+        // Clear first: switching accounts must not leave the previous session's cookies in the jar
+        // to be sent alongside the new ones.
+        cookieJar.clear()
+        cookieJar.install(cookies.toOkHttpCookies())
         _state.value = AuthState.LoggedIn(cookies)
     }
 }
